@@ -398,7 +398,7 @@ body.pw-locked{overflow:hidden !important;}
 .dp-c{background:var(--c-cl)}
 
 /* ═══ CONTENT ═══════════════════════════════════ */
-.content{flex:1;padding:20px;overflow-y:auto}
+.content{flex:1;padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch}
 
 /* ═══ SECTION BLOCK ═════════════════════════════ */
 .sec-block{
@@ -571,8 +571,15 @@ body.pw-locked{overflow:hidden !important;}
   .dash-val{font-size:20px}
   .dash-lbl{font-size:10px}
 
-  /* Content */
-  .content{padding:10px}
+  /* Layout: body scrolls on mobile, not inner .content div */
+  .layout{min-height:100vh;align-items:flex-start}
+  .main{height:auto;align-self:stretch;width:100%;overflow:visible}
+  .content{
+    overflow-y:visible;height:auto;flex:none;
+    padding:10px;
+    -webkit-overflow-scrolling:auto;
+  }
+  html,body{height:auto;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch}
 
   /* Cards */
   .card2{padding:10px}
