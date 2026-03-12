@@ -538,13 +538,15 @@ body.pw-locked{overflow:hidden !important;height:100vh !important;position:fixed
 @media(max-width:768px){
   .mob-ham{display:flex}
 
-  /* Sidebar: fixed drawer */
+  /* Sidebar: fixed drawer — solid bg on mobile (no blur through dark overlay) */
   .sidebar{
     position:fixed;left:0;top:0;height:100%;
     width:min(var(--sidebar-w), 82vw);min-width:unset;
     transform:translateX(-100%);
     transition:transform .3s cubic-bezier(.4,0,.2,1);
     z-index:500;box-shadow:none;
+    background:var(--panel);
+    backdrop-filter:none;-webkit-backdrop-filter:none;
   }
   .sidebar.sb-open{
     transform:translateX(0);
