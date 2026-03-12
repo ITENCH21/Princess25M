@@ -574,7 +574,8 @@ body.pw-locked{overflow:hidden !important;height:100vh !important;position:fixed
   .dash-lbl{font-size:10px}
 
   /* Layout: body scrolls on mobile, not inner .content div */
-  .layout{min-height:100vh;align-items:flex-start}
+  /* z-index:auto removes stacking context so sidebar (z-index:500) escapes layout and sits above sb-overlay (499) */
+  .layout{min-height:100vh;align-items:flex-start;z-index:auto}
   .main{height:auto;align-self:stretch;width:100%;overflow:visible}
   .content{
     overflow-y:visible;height:auto;flex:none;
