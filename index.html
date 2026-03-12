@@ -162,16 +162,6 @@ body.pw-locked{overflow:hidden !important;}
   filter:drop-shadow(0 0 22px rgba(26,143,232,.8))}
 .pw-wrap h2{font-size:21px;font-weight:700;color:#e8f4ff;margin-bottom:5px;letter-spacing:-.3px}
 .pw-wrap p{font-size:13px;color:#7aaac8;margin-bottom:18px}
-.pw-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:22px;width:100%}
-.pw-stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:10px 4px 8px;text-align:center}
-.pw-stat-val{font-size:20px;font-weight:800;line-height:1;letter-spacing:-.5px}
-.pw-stat-lbl{font-size:9px;color:#5a8aaa;text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
-.pw-stat-val.v-total{color:#63b3ed}
-.pw-stat-val.v-good{color:var(--g-cl)}
-.pw-stat-val.v-warn{color:var(--w-cl)}
-.pw-stat-val.v-crit{color:var(--c-cl)}
-.pw-stat.has-warn{border-color:rgba(255,159,10,.3);background:rgba(255,159,10,.07)}
-.pw-stat.has-crit{border-color:rgba(255,69,58,.35);background:rgba(255,69,58,.08)}
 
 /* ─── Input wrapper with eye toggle ─────────────────────────── */
 .pw-inp-wrap{position:relative;margin-bottom:12px}
@@ -808,12 +798,6 @@ body.pw-locked{overflow:hidden !important;}
     <span class="pw-icon">⚓</span>
     <h2 id="pw-h">Доступ к отчёту</h2>
     <p id="pw-p">Princess 25M &nbsp;·&nbsp; Технический отчёт</p>
-    <div class="pw-stats" id="pw-stats" style="display:none">
-      <div class="pw-stat"><div class="pw-stat-val v-total" id="pws-tot">—</div><div class="pw-stat-lbl" id="pws-tot-lbl">Всего</div></div>
-      <div class="pw-stat" id="pws-good-card"><div class="pw-stat-val v-good" id="pws-good">—</div><div class="pw-stat-lbl">Хорошо</div></div>
-      <div class="pw-stat" id="pws-warn-card"><div class="pw-stat-val v-warn" id="pws-warn">—</div><div class="pw-stat-lbl">Внимание</div></div>
-      <div class="pw-stat" id="pws-crit-card"><div class="pw-stat-val v-crit" id="pws-crit">—</div><div class="pw-stat-lbl">Критично</div></div>
-    </div>
     <div class="pw-inp-wrap">
       <input class="pw-inp" type="password" id="pw-inp" placeholder="Пароль" autocomplete="off" />
       <button type="button" class="pw-eye" id="pw-eye" onclick="togglePwEye()" tabindex="-1" aria-label="Показать пароль">
@@ -2270,31 +2254,9 @@ function boot(){
   if(!INITIAL_DATA_B64) return;
   try{
     const d=JSON.parse(decodeURIComponent(escape(atob(INITIAL_DATA_B64))));
-    let total=0,good=0,warn=0,crit=0;
-    for(const sec of SECTIONS){
-      for(const it of sec.items){
-        if(it.paired){
-          ['port','stbd'].forEach(s=>{
-            total++;
-            const st=d['st_'+it.id+'_'+s]||'good';
-            if(st==='crit') crit++; else if(st==='warn') warn++; else good++;
-          });
-        } else {
-          total++;
-          const st=d['st_'+it.id]||'good';
-          if(st==='crit') crit++; else if(st==='warn') warn++; else good++;
-        }
-      }
-    }
-    const wrap=document.getElementById('pw-stats');
-    if(!wrap) return;
-    document.getElementById('pws-tot').textContent=total;
-    document.getElementById('pws-good').textContent=good;
-    document.getElementById('pws-warn').textContent=warn;
-    document.getElementById('pws-crit').textContent=crit;
-    if(warn>0) document.getElementById('pws-warn-card').classList.add('has-warn');
-    if(crit>0) document.getElementById('pws-crit-card').classList.add('has-crit');
-    wrap.style.display='grid';
+    INITIAL_DATA=d;   // временно подставляем реальные данные
+    updateDash();     // рендерим актуальные цифры в фоновый дашборд
+    INITIAL_DATA={};  // сбрасываем — данные недоступны до авторизации
   }catch(e){}
 })();
 </script>
