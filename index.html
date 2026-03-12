@@ -104,7 +104,7 @@ body::before{
   pointer-events:none !important;
   user-select:none !important;
 }
-body.pw-locked{overflow:hidden !important;}
+body.pw-locked{overflow:hidden !important;height:100vh !important;position:fixed !important;width:100% !important;}
 
 /* ─── Graduated blur layer — transparent top, blurred bottom ── */
 /* z-index 9998: above app, below overlay                         */
@@ -579,7 +579,7 @@ body.pw-locked{overflow:hidden !important;}
     padding:10px;
     -webkit-overflow-scrolling:auto;
   }
-  html,body{height:auto;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  body{height:auto;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch}
 
   /* Cards */
   .card2{padding:10px}
