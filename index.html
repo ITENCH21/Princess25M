@@ -1950,21 +1950,13 @@ function saveToFile2(){
 }
 
 /* ═══════════════════════════════════════════════
-   PDF  —  html2pdf.js (CDN, dynamic load)
+   PDF  —  Blob URL → new tab → window.print()
 ═══════════════════════════════════════════════ */
 function dlPDF(){
   const span=document.getElementById('sb-pdf');
   const origTxt=span?span.textContent:'PDF';
   if(span) span.textContent='⏳ ...';
-  function loadLib(url,cb){
-    if(document.querySelector('script[data-lib="h2p"]')){cb();return;}
-    const s=document.createElement('script');
-    s.src=url; s.setAttribute('data-lib','h2p');
-    s.onload=cb;
-    s.onerror=()=>{if(span)span.textContent=origTxt;alert('Не удалось загрузить библиотеку PDF.\nПроверьте интернет-соединение.');};
-    document.head.appendChild(s);
-  }
-  loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js',()=>_buildPDF2(span,origTxt));
+  try{ _buildPDF2(span,origTxt); } catch(e){ if(span)span.textContent=origTxt; }
 }
 
 function _buildPDF2(span,origTxt){
@@ -2077,31 +2069,33 @@ function _buildPDF2(span,origTxt){
   <div class="pdf-info">&#127760; westsealcom.ru &nbsp;&middot;&nbsp; &#9993; westseal@mail.ru &nbsp;&middot;&nbsp; &#128222; +7&nbsp;962&nbsp;684&nbsp;96&nbsp;11 &nbsp;&middot;&nbsp; &#9992; @Ivan_2manof (Telegram)</div>
 </div></body>`;
 
-  /* PDF wrap must be visible for html2canvas to render it —
-     cover the screen with a loading overlay so the user doesn't see it */
-  const cover=document.createElement('div');
-  cover.style.cssText='position:fixed;inset:0;background:#0a1628;z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px';
-  cover.innerHTML='<div style="font-size:32px">📄</div><div style="color:#e8f4ff;font-size:15px;font-family:Arial,sans-serif">Генерация PDF...</div>';
-  document.body.appendChild(cover);
-
-  const wrap=document.createElement('div');
-  wrap.innerHTML=h;
-  wrap.style.cssText='position:absolute;left:0;top:0;width:190mm;background:#fff;padding:0;z-index:1';
-  document.body.appendChild(wrap);
-
-  const fname=`Princess_25M_${lng==='ru'?'Tekhnicheskiy_Otchet':'Technical_Report'}_${lng.toUpperCase()}.pdf`;
-  const cleanup=()=>{
-    if(document.body.contains(wrap)) document.body.removeChild(wrap);
-    if(document.body.contains(cover)) document.body.removeChild(cover);
-    if(span) span.textContent=origTxt;
-  };
-  html2pdf().set({
-    margin:[12,10,12,10],
-    filename:fname,
-    image:{type:'jpeg',quality:0.95},
-    html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,scrollX:0,scrollY:0},
-    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
-  }).from(wrap).save().then(cleanup).catch(cleanup);
+  /* ── Blob URL approach: open full HTML doc in new tab → auto-print → user saves as PDF ── */
+  const fname=`Princess_25M_${lng==='ru'?'Tekhnicheskiy_Otchet':'Technical_Report'}_${lng.toUpperCase()}`;
+  /* Wrap h (already contains <style> + <body>...</body>) in a full HTML document */
+  const fullHTML=`<!DOCTYPE html><html lang="${lng}"><head><meta charset="UTF-8">
+<title>Princess 25M \u2014 ${l.header_doc}</title>
+<style>
+@media print{
+  @page{margin:12mm 10mm;size:A4 portrait}
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>${h}</html>`;
+  const blob=new Blob([fullHTML],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const pw=window.open(url,'_blank');
+  if(pw){
+    pw.addEventListener('load',()=>{ pw.focus(); pw.print(); });
+    setTimeout(()=>URL.revokeObjectURL(url),120000);
+  } else {
+    /* Popup blocked — fallback: download the HTML, user opens + Ctrl+P */
+    const a=document.createElement('a');
+    a.href=url; a.download=fname+'.html';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
+    alert('Всплывающее окно заблокировано.\nОткройте скачанный HTML-файл в браузере и нажмите Ctrl+P → Сохранить как PDF');
+  }
+  if(span) span.textContent=origTxt;
 }
 
 /* ═══════════════════════════════════════════════
