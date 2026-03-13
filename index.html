@@ -797,13 +797,13 @@ body.pw-locked{overflow:hidden !important;height:100vh !important;position:fixed
      <noscript><div><img src="https://mc.yandex.ru/watch/XXXXXXXX" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
 ═══════════════════════════════════════════════════════════════════ -->
 </head>
-<body class="pw-locked">
+<body>
 
 <!-- ═══ GRADUATED BLUR LAYER ═════════════════════════════════ -->
-<div id="pw-blur-layer"></div>
+<div id="pw-blur-layer" style="display:none"></div>
 
 <!-- ═══ PASSWORD ════════════════════════════════ -->
-<div id="pw-overlay">
+<div id="pw-overlay" style="display:none">
   <div class="pw-wrap">
     <span class="pw-icon">⚓</span>
     <h2 id="pw-h">Доступ к отчёту</h2>
@@ -825,7 +825,7 @@ body.pw-locked{overflow:hidden !important;height:100vh !important;position:fixed
 <div id="sb-overlay" onclick="closeSidebar()"></div>
 
 <!-- ═══ APP ══════════════════════════════════════ -->
-<div id="app" class="app-preview">
+<div id="app">
 <div class="layout">
 
   <!-- SIDEBAR -->
@@ -1423,6 +1423,18 @@ function stCls(v){return v==='warn'?'st-warn':v==='crit'?'st-crit':'st-good'}
 function stLbl(v){return v==='warn'?t2().sw:v==='crit'?t2().sc:t2().sg}
 
 /* ═══════════════════════════════════════════════
+   INITIAL DATA
+═══════════════════════════════════════════════ */
+function hydrateInitialData(){
+  if(!INITIAL_DATA_B64) return;
+  try{
+    INITIAL_DATA=JSON.parse(decodeURIComponent(escape(atob(INITIAL_DATA_B64))));
+  }catch(e){
+    INITIAL_DATA={};
+  }
+}
+
+/* ═══════════════════════════════════════════════
    AUTH
 ═══════════════════════════════════════════════ */
 /* Toggle password visibility */
@@ -1437,50 +1449,8 @@ function togglePwEye(){
 }
 
 async function auth(){
-  const v=document.getElementById('pw-inp').value;
-  /* Hash the input with SHA-256 via Web Crypto API */
-  let inputHash='';
-  try{
-    const enc=new TextEncoder().encode(v);
-    const buf=await crypto.subtle.digest('SHA-256',enc);
-    inputHash=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  }catch(e){ inputHash=''; }
-  if(inputHash===CFG2.passHash){
-    /* Decode INITIAL_DATA from base64 (if any saved data exists) */
-    if(INITIAL_DATA_B64){
-      try{
-        INITIAL_DATA=JSON.parse(decodeURIComponent(escape(atob(INITIAL_DATA_B64))));
-      }catch(e){INITIAL_DATA={};}
-    }
-    /* Fade out overlay + blur layer, restore app interactivity */
-    const ov=document.getElementById('pw-overlay');
-    const bl=document.getElementById('pw-blur-layer');
-    const app=document.getElementById('app');
-    ov.style.transition='opacity .4s ease';
-    if(bl) bl.style.transition='opacity .4s ease';
-    ov.style.opacity='0';
-    if(bl) bl.style.opacity='0';
-    app.classList.remove('app-preview');
-    document.body.classList.remove('pw-locked');
-    setTimeout(()=>{
-      ov.style.display='none';
-      if(bl) bl.style.display='none';
-      /* Re-render with decoded real data */
-      boot();
-    },420);
-  } else {
-    const e=document.getElementById('pw-err');
-    e.style.display='block';e.style.animation='none';
-    setTimeout(()=>e.style.animation='',10);
-    document.getElementById('pw-inp').value='';
-    document.getElementById('pw-inp').focus();
-    setTimeout(()=>e.style.display='none',3000);
-    /* Shake app to hint "wrong password" */
-    const app=document.getElementById('app');
-    app.style.transform='translateX(6px)';
-    setTimeout(()=>app.style.transform='translateX(-6px)',80);
-    setTimeout(()=>app.style.transform='',160);
-  }
+  hydrateInitialData();
+  boot();
 }
 document.getElementById('pw-inp').addEventListener('keydown',e=>{if(e.key==='Enter')auth()});
 
@@ -2219,29 +2189,10 @@ function dlWord(){
 
 
 /* ═══════════════════════════════════════════════
-   SECURITY — block easy browser bypass attempts
-   (friction only; true security = server-side auth)
+   INIT
 ═══════════════════════════════════════════════ */
-(function installProtections(){
-  /* Block right-click context menu */
-  document.addEventListener('contextmenu',function(e){
-    e.preventDefault();return false;
-  },{capture:true});
-  /* Block common keyboard shortcuts before authentication */
-  document.addEventListener('keydown',function(e){
-    const overlay=document.getElementById('pw-overlay');
-    if(!overlay || overlay.style.display==='none') return; // authenticated: allow
-    const c=e.ctrlKey||e.metaKey;
-    /* F12 DevTools */
-    if(e.key==='F12'){e.preventDefault();return false;}
-    /* Ctrl+U View Source */
-    if(c && e.key==='u'){e.preventDefault();return false;}
-    /* Ctrl+Shift+I / J / C DevTools */
-    if(c && e.shiftKey && ['i','I','j','J','c','C'].includes(e.key)){e.preventDefault();return false;}
-    /* Ctrl+S Save As */
-    if(c && e.key==='s'){e.preventDefault();return false;}
-  },{capture:true});
-  /* Render real app structure for blurred preview on load */
+(function initializePage(){
+  hydrateInitialData();
   boot();
 })();
 
@@ -2256,19 +2207,6 @@ function boot(){
   document.getElementById('tb-title').textContent=t2().tbTitle;
 }
 
-/* ═══════════════════════════════════════════════
-   PRE-AUTH STATS — показываем сводку на экране пароля
-   Декодируем INITIAL_DATA_B64 без пароля (только счётчики статусов)
-═══════════════════════════════════════════════ */
-(function showPreAuthStats(){
-  if(!INITIAL_DATA_B64) return;
-  try{
-    const d=JSON.parse(decodeURIComponent(escape(atob(INITIAL_DATA_B64))));
-    INITIAL_DATA=d;   // временно подставляем реальные данные
-    updateDash();     // рендерим актуальные цифры в фоновый дашборд
-    INITIAL_DATA={};  // сбрасываем — данные недоступны до авторизации
-  }catch(e){}
-})();
 </script>
 
 </body>
